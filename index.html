@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Happy Birthday Rimsha</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;800&family=Great+Vibes&display=swap" rel="stylesheet" />
+    <style>
+      body{
+        margin:0;
+        overflow:hidden;
+        background:#000;
+        touch-action: manipulation;
+      }
+      canvas{position:absolute; inset:0;}
+      svg{display:none;}
+
+      /* Romantic background wallpaper (always visible, not black) */
+      .bg-pic{
+        position:absolute; inset:0; z-index:-3;
+        background: url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop") center center/cover no-repeat;
+        filter: brightness(0.65);
+      }
+
+      /* Photo frame (GF pic with floating animation) */
+      .photo-frame {
+        position: absolute;
+        top: 15%; 
+        left: 50%;
+        transform: translateX(-50%);
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 4px solid #ff9ac6;
+        box-shadow: 0 0 20px rgba(255,120,180,.7);
+        z-index: 11;
+        animation: floatPic 4s ease-in-out infinite;
+      }
+      .photo-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      /* Text overlay */
+      .birthday{
+        position:absolute; inset:0; display:grid; place-items:center;
+        z-index:10; pointer-events:none; text-align:center;
+        font-family:'Poppins',sans-serif; padding:16px;
+      }
+      .inner{ 
+        transform: translateY(30px);  
+        animation: floaty 3s ease-in-out infinite; 
+      }
+      h2{
+        margin:0; line-height:1.15; font-weight:800;
+        font-size: clamp(22px, 7vw, 48px);
+        background: linear-gradient(270deg,#ffd6ec,#fff,#ff8abb,#ffd6ec);
+        background-size:300% 300%;
+        -webkit-background-clip:text; background-clip:text; color:transparent;
+        animation: gradientShift 6s ease-in-out infinite;
+        text-shadow: 0 0 14px rgba(255,120,180,.8);
+      }
+      h2 .name{
+        display:block; font-family:'Great Vibes',cursive;
+        font-size: clamp(28px, 8vw, 60px);
+        color:#ff9ac6;
+        text-shadow:0 0 18px #ff6aa9, 0 0 32px rgba(255,96,160,.55);
+      }
+
+      @keyframes floaty{0%,100%{transform:translateY(30px)}50%{transform:translateY(40px)}}
+      @keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+      @keyframes floatPic{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-10px);}}
+
+      /* Glow ring */
+      .glow{position:absolute; inset:0; display:flex; justify-content:center; align-items:center; z-index:5; pointer-events:none;}
+      .glow::before{
+        content:""; width:min(82vmin,720px); height:min(82vmin,720px); border-radius:50%;
+        background: conic-gradient(from 0deg, #ff7fb8, transparent 25%, #ffd6ec 50%, transparent 75%, #ff7fb8);
+        filter: blur(40px); opacity:.32; animation:spin 12s linear infinite;
+      }
+      @keyframes spin{to{transform:rotate(360deg)}}
+
+      /* Confetti */
+      .confetti{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:12}
+      .confetti span{position:absolute; width:7px; height:10px; border-radius:2px; opacity:.85; transform:rotate(15deg)}
+    </style>
+  </head>
+  <body>
+    <div class="bg-pic"></div>
+
+    <!-- Heart -->
+    <svg viewBox="0 0 600 552">
+      <path d="M300,107.77C284.68,55.67,239.76,0,162.31,0,64.83,0,0,82.08,0,171.71c0,.48,0,.95,0,1.43-.52,19.5,0,217.94,299.87,379.69v0l0,0,.05,0,0,0,0,0v0C600,391.08,600.48,192.64,600,173.14c0-.48,0-.95,0-1.43C600,82.08,535.17,0,437.69,0,360.24,0,315.32,55.67,300,107.77" fill="#ee5282"/>
+    </svg>
+
+    <div class="glow"></div>
+
+    <!-- GF photo -->
+    <div class="photo-frame">
+      <img src="Rimsha.png" alt="Rimsha">
+    </div>
+
+    <!-- Text -->
+    <div class="birthday">
+      <div class="inner">
+        <h2>Happy<br>Birthday<br><span class="name">Rimsha 💖</span></h2>
+      </div>
+    </div>
+
+    <!-- Confetti -->
+    <div class="confetti" id="confetti"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.136.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.136.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+    <script>
+      const isMobile = matchMedia("(max-width: 480px)").matches;
+      const DPR = Math.min(window.devicePixelRatio||1, isMobile?1.25:2);
+      const STEP = isMobile?0.35:0.15;
+      const POINT_SIZE = isMobile?2.2:3.0;
+      const CONFETTI_COUNT = isMobile?16:40;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,5000);
+      camera.position.z=500;
+      const renderer=new THREE.WebGLRenderer({antialias:!isMobile,powerPreference:"high-performance"});
+      renderer.setPixelRatio(DPR);
+      renderer.setSize(window.innerWidth,window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const controls=new THREE.OrbitControls(camera,renderer.domElement);
+      controls.enableZoom=false;
+
+      const path=document.querySelector("path");
+      const length=path.getTotalLength();
+      const vertices=[];
+      const tl=gsap.timeline({repeat:-1,yoyo:true});
+      for(let i=0;i<length;i+=STEP){
+        const point=path.getPointAtLength(i);
+        const v=new THREE.Vector3(point.x,-point.y,0);
+        v.x+=(Math.random()-.5)*30;
+        v.y+=(Math.random()-.5)*30;
+        v.z+=(Math.random()-.5)*70;
+        vertices.push(v);
+        tl.from(v,{x:600/2,y:-552/2,z:0,ease:"power2.inOut",duration:"random(2,5)"},i*0.002);
+      }
+      const positions=new Float32Array(vertices.length*3);
+      const geometry=new THREE.BufferGeometry();
+      geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
+      const material=new THREE.PointsMaterial({color:0xee5282,blending:THREE.AdditiveBlending,size:POINT_SIZE});
+      const particles=new THREE.Points(geometry,material);
+      particles.position.x-=600/2;
+      particles.position.y+=552/2;
+      scene.add(particles);
+
+      gsap.fromTo(scene.rotation,{y:-0.2},{y:0.2,repeat:-1,yoyo:true,ease:"power2.inOut",duration:3});
+
+      function render(){
+        requestAnimationFrame(render);
+        const pos=geometry.attributes.position.array;
+        for(let i=0;i<vertices.length;i++){
+          const v=vertices[i];
+          pos[i*3]=v.x; pos[i*3+1]=v.y; pos[i*3+2]=v.z;
+        }
+        geometry.attributes.position.needsUpdate=true;
+        controls.update();
+        renderer.render(scene,camera);
+      }
+      render();
+
+      window.addEventListener("resize",()=>{
+        camera.aspect=window.innerWidth/window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth,window.innerHeight);
+      });
+
+      // Confetti
+      const confetti=document.getElementById("confetti");
+      const colors=["#ff4da6","#ffccff","#ff99cc","#ff6699","#ff3385","#ff80bf","#ffe6f2"];
+      for(let i=0;i<CONFETTI_COUNT;i++){
+        const c=document.createElement("span");
+        c.style.left=Math.random()*100+"%";
+        c.style.top="-12px";
+        c.style.background=colors[(Math.random()*colors.length)|0];
+        confetti.appendChild(c);
+        const dur=4+Math.random()*4;
+        gsap.to(c,{y:window.innerHeight+40,x:"random(-40,40)",rotation:Math.random()*360,duration:dur,repeat:-1,delay:Math.random()*dur,ease:"linear"});
+      }
+    </script>
+  </body>
+</html>
