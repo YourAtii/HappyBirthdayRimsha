@@ -14,13 +14,6 @@
       canvas{position:absolute; inset:0;}
       svg{display:none;}
 
-      /* Background wallpaper */
-      .bg-pic{
-        position:absolute; inset:0; z-index:-3;
-        background: url("https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop") center/cover no-repeat;
-        filter: brightness(0.65);
-      }
-
       /* Content wrapper */
       .content{
         position: absolute;
@@ -34,7 +27,7 @@
         text-align: center;
       }
 
-      /* Photo frame (center above text) */
+      /* Photo frame */
       .photo-frame {
         width: 180px;
         height: 180px;
@@ -56,7 +49,7 @@
         margin:0;
         line-height:1.2;
         font-weight:800;
-        font-size: clamp(28px, 10vw, 56px); /* bigger on mobile */
+        font-size: clamp(28px, 10vw, 56px);
         background: linear-gradient(270deg,#ffd6ec,#fff,#ff8abb,#ffd6ec);
         background-size:300% 300%;
         -webkit-background-clip:text; background-clip:text; color:transparent;
@@ -92,19 +85,26 @@
       /* Confetti */
       .confetti{position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:12}
       .confetti span{position:absolute; width:7px; height:10px; border-radius:2px; opacity:.85; transform:rotate(15deg)}
+
+      /* Music UI */
+      .controls { position: fixed; right: 12px; bottom: 12px; z-index: 30; display: flex; gap: 8px; }
+      .btn { cursor: pointer; font: 14px system-ui, sans-serif; padding: 6px 10px; border-radius: 10px; border: 1px solid #444; background:#1d1d1d; color:#eee; opacity:.9; pointer-events:auto; }
+      .btn:hover { opacity: 1 }
+      .gate { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.85); color:#fff; z-index: 40; }
+      .gate.hidden { display: none }
+      .gate .card { text-align: center; padding: 20px 24px; border: 1px solid #333; border-radius: 14px; background: #121212; }
+      .gate .card h1 { margin: 0 0 10px; font: 600 18px/1.2 system-ui, sans-serif; }
     </style>
   </head>
   <body>
-    <div class="bg-pic"></div>
-
-    <!-- Heart -->
+    <!-- Heart path -->
     <svg viewBox="0 0 600 552">
       <path d="M300,107.77C284.68,55.67,239.76,0,162.31,0,64.83,0,0,82.08,0,171.71c0,.48,0,.95,0,1.43-.52,19.5,0,217.94,299.87,379.69v0l0,0,.05,0,0,0,0,0v0C600,391.08,600.48,192.64,600,173.14c0-.48,0-.95,0-1.43C600,82.08,535.17,0,437.69,0,360.24,0,315.32,55.67,300,107.77" fill="#ee5282"/>
     </svg>
 
     <div class="glow"></div>
 
-    <!-- Photo + Text (centered) -->
+    <!-- Photo + Text -->
     <div class="content">
       <div class="photo-frame">
         <img src="Rimsha.png" alt="Rimsha">
@@ -114,13 +114,32 @@
 
     <div class="confetti" id="confetti"></div>
 
+    <!-- Music elements -->
+    <audio id="bgm" preload="auto" loop playsinline></audio>
+
+    <div id="gate" class="gate" role="dialog" aria-modal="true">
+      <div class="card">
+        <h1>Tap to start the music</h1>
+        <p>Then enjoy the animation.</p>
+        <button id="gateStart" class="btn">Start</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="playPause" class="btn">Play</button>
+      <button id="mute" class="btn">Unmute</button>
+    </div>
+
+    <!-- libs -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.136.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.136.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
+
+    <!-- Heart + Confetti -->
     <script>
       const isMobile = matchMedia("(max-width: 480px)").matches;
       const DPR = Math.min(window.devicePixelRatio||1, isMobile?1.25:2);
-      const STEP = isMobile?0.3:0.15;  // denser on desktop, lighter on mobile
+      const STEP = isMobile?0.3:0.15;
       const POINT_SIZE = isMobile?2.4:3.0;
       const CONFETTI_COUNT = isMobile?20:45;
 
@@ -142,7 +161,7 @@
       const tl=gsap.timeline({repeat:-1,yoyo:true});
       for(let i=0;i<length;i+=STEP){
         const point=path.getPointAtLength(i);
-        const v=new THREE.Vector3(point.x-300,-point.y+250,0); // shifted to center
+        const v=new THREE.Vector3(point.x-300,-point.y+250,0);
         v.x+=(Math.random()-.5)*30;
         v.y+=(Math.random()-.5)*30;
         v.z+=(Math.random()-.5)*70;
@@ -189,6 +208,54 @@
         const dur=4+Math.random()*4;
         gsap.to(c,{y:window.innerHeight+40,x:"random(-40,40)",rotation:Math.random()*360,duration:dur,repeat:-1,delay:Math.random()*dur,ease:"linear"});
       }
+    </script>
+
+    <!-- Music logic -->
+    <script>
+      (() => {
+        const audioCandidates = ["./hbd.mp3"];
+        const defaultVolume = 0.6;
+
+        const audio   = document.getElementById('bgm');
+        const gate    = document.getElementById('gate');
+        const gateBtn = document.getElementById('gateStart');
+        const playBtn = document.getElementById('playPause');
+        const muteBtn = document.getElementById('mute');
+
+        audio.volume = defaultVolume;
+
+        function updateButtons() {
+          playBtn.textContent = audio.paused ? 'Play' : 'Pause';
+          muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
+        }
+
+        async function startMusic() {
+          try {
+            await audio.play();
+            gate.classList.add('hidden');
+          } catch (err) {
+            console.warn('Play blocked until click');
+          }
+          updateButtons();
+        }
+
+        gateBtn.addEventListener('click', startMusic);
+
+        playBtn.addEventListener('click', async () => {
+          if (audio.paused) await audio.play(); else audio.pause();
+          updateButtons();
+        });
+
+        muteBtn.addEventListener('click', () => {
+          audio.muted = !audio.muted;
+          updateButtons();
+        });
+
+        (async () => {
+          audio.src = audioCandidates[0];
+          updateButtons();
+        })();
+      })();
     </script>
   </body>
 </html>
